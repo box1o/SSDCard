@@ -1,0 +1,230 @@
+name: PCB Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release
+  pull_request:
+    branches:
+      - release
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  SETTINGS_FILE: settings.env
+  KIBOT_CONFIG: .github/kibot.yaml
+  KIBOT_LOG: kibot_run.log
+
+jobs:
+  manufacturing:
+    name: Build manufacturing package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Load settings
+        run: |
+          set -a
+          . "./${SETTINGS_FILE}"
+          set +a
+          {
+            echo "PROJECT_NAME=${PROJECT_NAME}"
+            echo "BOARD_NAME=${BOARD_NAME}"
+            echo "AUTHOR=${AUTHOR}"
+            echo "PACKAGE_NAME=${PACKAGE_NAME}"
+            echo "RELEASE_TITLE=${RELEASE_TITLE}"
+            echo "RELEASE_TAG_PREFIX=${BOARD_NAME}"
+            echo "RELEASE_ZIP=build/release/${PACKAGE_NAME}.zip"
+            echo "RELEASE_NOTES=build/release/release-notes.md"
+            echo "SCHEMATIC_PDF=build/docs/${BOARD_NAME}-schematic.pdf"
+            echo "RENDER_ISO=build/images/${BOARD_NAME}-3d.png"
+          } >> "$GITHUB_ENV"
+
+      - name: Check PCB outline
+        id: pcb_outline
+        run: |
+          pcb_file="${PROJECT_NAME}.kicad_pcb"
+          if [ ! -f "$pcb_file" ]; then
+            pcb_file="$(find . -maxdepth 1 -name '*.kicad_pcb' -print -quit)"
+          fi
+
+          if [ -n "$pcb_file" ] && grep -q '(layer "Edge.Cuts")' "$pcb_file"; then
+            echo "has_outline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_outline=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate fabrication outputs
+        uses: INTI-CMNB/KiBot@v2_dk10
+        with:
+          config: ${{ env.KIBOT_CONFIG }}
+          dir: .
+          additional_args: --log ${{ env.KIBOT_LOG }} ci
+          cache3D: YES
+
+      - name: Generate interactive BOM
+        if: steps.pcb_outline.outputs.has_outline == 'true'
+        continue-on-error: true
+        uses: INTI-CMNB/KiBot@v2_dk10
+        with:
+          config: ${{ env.KIBOT_CONFIG }}
+          dir: .
+          additional_args: --log kibot_ibom.log html_ibom
+          cache3D: YES
+
+      - name: Generate STEP model
+        if: steps.pcb_outline.outputs.has_outline == 'true'
+        continue-on-error: true
+        uses: INTI-CMNB/KiBot@v2_dk10
+        with:
+          config: ${{ env.KIBOT_CONFIG }}
+          dir: .
+          additional_args: --log kibot_3d_model.log step_3d_model
+          cache3D: YES
+
+      - name: Normalize generated file permissions
+        run: |
+          if [ -d build ]; then
+            sudo chown -R "$USER":"$USER" build
+          fi
+
+      - name: Add interactive BOM fallback
+        run: |
+          mkdir -p build/assembly
+          ibom_file="build/assembly/${BOARD_NAME}-ibom.html"
+          if [ ! -s "$ibom_file" ]; then
+            cat > "$ibom_file" <<HTML
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <title>${BOARD_NAME} interactive BOM</title>
+            <style>
+              body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; color: #1f2937; }
+              main { max-width: 720px; }
+              code { background: #f3f4f6; padding: 0.1rem 0.3rem; border-radius: 4px; }
+            </style>
+          </head>
+          <body>
+            <main>
+              <h1>${BOARD_NAME} interactive BOM</h1>
+              <p>The interactive BOM was not generated because the PCB has no <code>Edge.Cuts</code> outline yet.</p>
+              <p>Add the final board outline and rerun CI to generate the full interactive board view.</p>
+            </main>
+          </body>
+          </html>
+          HTML
+          fi
+
+      - name: Add STEP model fallback
+        run: |
+          mkdir -p build/models
+          model_file="build/models/${BOARD_NAME}-3d.step"
+          if [ ! -s "$model_file" ]; then
+            cat > build/models/README.txt <<TXT
+          The PCB 3D STEP model was not generated because the PCB has no Edge.Cuts outline yet.
+          Add the final board outline and rerun CI to generate ${BOARD_NAME}-3d.step.
+          TXT
+          fi
+
+      - name: Create release zip
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+
+          zip_path = Path(os.environ["RELEASE_ZIP"])
+          zip_path.parent.mkdir(parents=True, exist_ok=True)
+          roots = [
+              Path("build/docs"),
+              Path("build/images"),
+              Path("build/assembly"),
+              Path("build/fabrication"),
+              Path("build/models"),
+          ]
+
+          with ZipFile(zip_path, "w", ZIP_DEFLATED) as archive:
+              for root in roots:
+                  if not root.exists():
+                      continue
+                  for file_path in sorted(path for path in root.rglob("*") if path.is_file()):
+                      archive.write(file_path, file_path.relative_to("build"))
+          PY
+
+      - name: Upload manufacturing package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE_NAME }}-outputs
+          path: build/
+
+      - name: Upload KiBot log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kibot-log
+          path: kibot*.log
+
+      - name: Create release tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+        id: release_tag
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          tag="${RELEASE_TAG_PREFIX}-$(date -u +%Y%m%d)-${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          git tag "$tag"
+          git push origin "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release notes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+        env:
+          RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}
+        run: |
+          mkdir -p build/release
+
+          release_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}"
+          previous_tag="$(git describe --tags --abbrev=0 "${RELEASE_TAG}^" 2>/dev/null || true)"
+
+          {
+            echo "## Downloads"
+            echo
+            echo "[Complete manufacturing package](${release_url}/${PACKAGE_NAME}.zip), [Schematic PDF](${release_url}/${BOARD_NAME}-schematic.pdf), [Angled 3D preview](${release_url}/${BOARD_NAME}-3d.png)"
+            echo
+            echo "## 3D preview"
+            echo
+            echo "<img src=\"${release_url}/${BOARD_NAME}-3d.png\" alt=\"Angled 3D preview\" width=\"640\">"
+            echo
+            echo "## Changelog"
+            echo
+
+            if [ -n "$previous_tag" ]; then
+              git log --invert-grep --grep='^Update README from settings' --pretty=format:'- %s (`%h`)' "${previous_tag}..HEAD"
+            else
+              git log --invert-grep --grep='^Update README from settings' --max-count=20 --pretty=format:'- %s (`%h`)'
+            fi
+
+            echo
+          } > "$RELEASE_NOTES"
+
+      - name: Publish release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.release_tag.outputs.tag }}" \
+            "${{ env.RELEASE_ZIP }}#Complete manufacturing package" \
+            "${{ env.SCHEMATIC_PDF }}#Schematic PDF" \
+            "${{ env.RENDER_ISO }}#Angled 3D preview" \
+            --title "${{ env.RELEASE_TITLE }}" \
+            --notes-file "${{ env.RELEASE_NOTES }}"
