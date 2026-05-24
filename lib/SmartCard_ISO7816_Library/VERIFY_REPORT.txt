@@ -1,0 +1,22 @@
+VERIFY REPORT
+=============
+symbol file: SmartCard_ISO7816.kicad_sym
+footprint file: SmartCard_ISO7816.pretty/ISO7816_CardPads_Clean_Functional.kicad_mod
+symbol pins count: 8
+footprint pads count: 8
+symbol numbers: ['1', '2', '3', '4', '5', '6', '7', '8']
+footprint numbers: ['1', '2', '3', '4', '5', '6', '7', '8']
+numbers match 1..8: True
+all footprint pads are smd custom: True
+visible C1..C8 text removed: True
+visible 1..8 text removed: True
+
+Symbol pin map:
+  1: VCC (power_in, line)
+  2: RST (input, line)
+  3: CLK (input, line)
+  4: AUX1 (passive, line)
+  5: GND (power_in, line)
+  6: VPP/NC (passive, line)
+  7: I/O (bidirectional, line)
+  8: AUX2 (passive, line)

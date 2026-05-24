@@ -1,0 +1,15 @@
+{
+  "library_name": "SmartCard_ISO7816",
+  "symbol": "SmartCard_ISO7816_Connector_Clean",
+  "footprint": "ISO7816_CardPads_Clean_Functional",
+  "pin_map": {
+    "1": "VCC",
+    "2": "RST",
+    "3": "CLK",
+    "4": "AUX1",
+    "5": "GND",
+    "6": "VPP/NC",
+    "7": "I/O",
+    "8": "AUX2"
+  }
+}

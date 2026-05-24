@@ -640,7 +640,7 @@
       "version": 1
     },
     "net_format_name": "",
-    "page_layout_descr_file": "SSD/SmartCard Schematic",
+    "page_layout_descr_file": "",
     "plot_directory": "",
     "reuse_designators": true,
     "spice_current_sheet_as_root": false,
