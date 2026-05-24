@@ -42,7 +42,7 @@ jobs:
             echo "AUTHOR=${AUTHOR}"
             echo "PACKAGE_NAME=${PACKAGE_NAME}"
             echo "RELEASE_TITLE=${RELEASE_TITLE}"
-            echo "RELEASE_TAG_PREFIX=${BOARD_NAME}"
+            echo "RELEASE_TAG_PREFIX=${PROJECT_NAME}"
             echo "RELEASE_ZIP=build/release/${PACKAGE_NAME}.zip"
             echo "RELEASE_NOTES=build/release/release-notes.md"
             echo "SCHEMATIC_PDF=build/docs/${BOARD_NAME}-schematic.pdf"
