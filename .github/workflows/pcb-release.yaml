@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - release
+      - dev
   pull_request:
     branches:
-      - release
+      - dev
 
 permissions:
   contents: write
@@ -175,7 +175,7 @@ jobs:
           path: kibot*.log
 
       - name: Create release tag
-        if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         id: release_tag
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -186,7 +186,7 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Prepare release notes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         env:
           RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}
         run: |
@@ -217,7 +217,7 @@ jobs:
           } > "$RELEASE_NOTES"
 
       - name: Publish release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/release'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
