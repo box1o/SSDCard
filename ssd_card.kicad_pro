@@ -240,7 +240,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": ""
+      "sch_revision": "0.1"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -489,7 +489,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "tkci.kicad_pro",
+    "filename": "ssd_card.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -640,7 +640,7 @@
       "version": 1
     },
     "net_format_name": "",
-    "page_layout_descr_file": "",
+    "page_layout_descr_file": "SSD/SmartCard Schematic",
     "plot_directory": "",
     "reuse_designators": true,
     "spice_current_sheet_as_root": false,
@@ -649,18 +649,18 @@
     "subpart_id_separator": 0,
     "top_level_sheets": [
       {
-        "filename": "tkci.kicad_sch",
-        "name": "tkci",
+        "filename": "ssd_card.kicad_sch",
+        "name": "ssd_card",
         "uuid": "3b33e848-4152-46e1-b296-4bd1fef8e537"
       }
     ],
-    "used_designators": "U1",
+    "used_designators": "J1,U1",
     "variants": []
   },
   "sheets": [
     [
       "3b33e848-4152-46e1-b296-4bd1fef8e537",
-      "tkci"
+      "ssd_card"
     ]
   ],
   "text_variables": {},
