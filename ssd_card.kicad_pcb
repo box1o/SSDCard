@@ -89,7 +89,6 @@
 		)
 	)
 	(footprint "SmartCard_ISO7816:ISO7816_CardPads_Clean_Functional"
-		(locked yes)
 		(layer "F.Cu")
 		(uuid "92ae4c07-5e5a-47e1-bb53-b622e5522a83")
 		(at 115.03 123.739595)
@@ -98,7 +97,7 @@
 		(property "Reference" "J1"
 			(at 0 -6.2 0)
 			(layer "F.SilkS")
-			(uuid "22a3ecfd-5441-4d83-a43d-6737c098914a")
+			(uuid "07303995-0e7e-4767-88b6-f010bdec6867")
 			(effects
 				(font
 					(size 1 1)
@@ -110,7 +109,7 @@
 			(at 0 5.982624 0)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "49648534-b227-4f38-be9b-215d1d7593db")
+			(uuid "2132d335-7320-40a9-8af4-55473f78862d")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -121,7 +120,7 @@
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "c82e75ab-10c2-48c1-a98a-9dca3706791c")
+			(uuid "674ecc5c-a024-4676-b13f-013cd1b70794")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -132,7 +131,7 @@
 			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "459604e9-02c9-4702-a602-e64d6adfabab")
+			(uuid "dcaaa0f8-9757-4640-b446-445412d8a680")
 			(effects
 				(font
 					(size 1.27 1.27)
