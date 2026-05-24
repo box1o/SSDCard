@@ -1,7 +1,7 @@
 # SSDCard 
 
 <p align="center">
-  <img src="https://github.com/box1o/SSDCard/releases/latest/download/tkci-3d.png" alt="tkci IMG" width="720">
+  <img src="https://github.com/box1o/SSDCard/releases/latest/download/SmartCard.Emulator-3d.png" alt="SmartCard Emulator 3D render" width="720">
 </p>
 
 
