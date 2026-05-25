@@ -1,0 +1,46 @@
+* RST/CLK level translator direction check
+* Schematic path:
+*   SC_RST -> R3 -> U2 A1, U2 B1 -> STM32_CARD_RST / PB0
+*   SC_CLK -> R4 -> U2 A2, U2 B2 -> STM32_CARD_CLK / PA8
+*   U2 VCCA=SC_VCC, VCCB=+3.3V, DIR=SC_VCC
+*
+* This behavioral deck checks the intended card-reader-to-STM32 direction.
+
+.param SCVCC=3.0
+.param VMCU=3.3
+.param VRST=0
+.param VCLK=0
+
+Vsc sc_vcc 0 {SCVCC}
+Vmcu mcu_vcc 0 {VMCU}
+Vrst_src sc_rst 0 {VRST}
+Vclk_src sc_clk 0 {VCLK}
+
+R3 sc_rst u2_a1 220
+R4 sc_clk u2_a2 220
+
+* U2 channels A->B because DIR is tied high to SC_VCC.
+Brst stm32_rst 0 V = { V(u2_a1) > (SCVCC/2) ? VMCU : 0 }
+Bclk stm32_clk 0 V = { V(u2_a2) > (SCVCC/2) ? VMCU : 0 }
+Rrst_load stm32_rst 0 1e9
+Rclk_load stm32_clk 0 1e9
+
+.control
+set noaskquit
+echo "SCVCC,SC_RST,STM32_RST,SC_CLK,STM32_CLK"
+foreach scvcc 1.8 3.0 5.0
+  alterparam SCVCC = $scvcc
+  foreach rst 0 $scvcc
+    foreach clk 0 $scvcc
+      alterparam VRST = $rst
+      alterparam VCLK = $clk
+      reset
+      op
+      echo $scvcc "," $rst "," $&v(stm32_rst) "," $clk "," $&v(stm32_clk)
+    end
+  end
+end
+quit
+.endc
+
+.end

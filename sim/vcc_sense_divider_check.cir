@@ -1,0 +1,31 @@
+* SC_VCC ADC sense divider check
+* Schematic path:
+*   SC_VCC -> R1 100k -> STM32_CARD_VCC_SENSE -> R2 100k -> GND
+*   STM32_CARD_VCC_SENSE -> STM32 PA0 / ADC1_IN0
+
+.param SCVCC=3.0
+.param R1=100k
+.param R2=100k
+.param ADC_BITS=4095
+.param ADC_VREF=3.3
+
+Vsc sc_vcc 0 {SCVCC}
+Rtop sc_vcc adc  {R1}
+Rbot adc    0    {R2}
+Radc_leak adc 0 1e9
+
+.control
+set noaskquit
+echo "SCVCC,V_ADC,ADC12_COUNTS,DIVIDER_CURRENT_uA"
+foreach scvcc 0 1.8 3.0 5.0
+  alterparam SCVCC = $scvcc
+  reset
+  op
+  let adc_counts = v(adc) / 3.3 * 4095
+  let div_current_ua = -1000000 * v(vsc#branch)
+  echo $scvcc "," $&v(adc) "," $&adc_counts "," $&div_current_ua
+end
+quit
+.endc
+
+.end

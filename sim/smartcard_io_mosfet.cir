@@ -1,0 +1,62 @@
+* Smartcard IO MOSFET interface test
+* Models the current schematic idea:
+* - reader/card side pull-up on SC_IO to SC_VCC
+* - Q1 2N7002 sinks SC_IO low when STM32_CARD_IO_DRV is high
+* - R5 gate series, R7 gate pulldown
+* - R6 series path from SC_IO to STM32_CARD_IO_SENSE
+
+.param VCC=3.0
+.param RPULL=10000
+.param RLOAD=1e9
+.param VDRV=3.3
+
+Vcard sc_vcc 0 {VCC}
+Rreader sc_vcc sc_io {RPULL}
+
+Vdrv_raw stm_drv_raw 0 {VDRV}
+R5 stm_drv_raw gate 100
+R7 gate 0 100k
+
+M1 sc_io gate 0 0 M2N7002
+
+R6 sc_io stm_sense 220
+Rsense_leak stm_sense 0 {RLOAD}
+
+.model M2N7002 NMOS (
++ LEVEL=1
++ VTO=2.1
++ KP=0.12
++ LAMBDA=0.02
++ RD=2
++ RS=2
++ CGSO=25p
++ CGDO=10p
++)
+
+.control
+set noaskquit
+echo "case,VCC,RPULL,VDRV,SC_IO,STM32_SENSE,I_READER_mA,I_DRV_uA"
+foreach vcc 1.8 3.0 5.0
+  foreach rpull 1000 4700 10000 20000
+    alterparam VCC = $vcc
+    alterparam RPULL = $rpull
+
+    alterparam VDRV = 0
+    reset
+    op
+    let i_reader_ma = -1000 * v(vcard#branch)
+    let i_drv_ua = -1000000 * v(vdrv_raw#branch)
+    echo "released," $vcc "," $rpull ",0," $&v(sc_io) "," $&v(stm_sense) "," $&i_reader_ma "," $&i_drv_ua
+
+    alterparam VDRV = 3.3
+    reset
+    op
+    let i_reader_ma = -1000 * v(vcard#branch)
+    let i_drv_ua = -1000000 * v(vdrv_raw#branch)
+    echo "drive_low," $vcc "," $rpull ",3.3," $&v(sc_io) "," $&v(stm_sense) "," $&i_reader_ma "," $&i_drv_ua
+  end
+end
+quit
+.endc
+
+.end

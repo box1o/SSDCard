@@ -1,0 +1,78 @@
+* Smartcard I/O interface behavioral check
+* Schematic path:
+*   SC_IO -> Q1 drain, Q1 source -> GND
+*   STM32_CARD_IO_DRV -> R5 -> Q1 gate, R7 gate pulldown
+*   SC_IO -> R6 -> U3 A2, U3 B2 -> STM32_CARD_IO_SENSE
+*
+* Assumption: reader/card-contact side provides the I/O pull-up.
+
+.param SCVCC=3.0
+.param VMCU=3.3
+.param RPULL=10000
+.param RREADER_LOW=1e12
+.param VDRV=0
+
+Vsc sc_vcc 0 {SCVCC}
+Vmcu mcu_vcc 0 {VMCU}
+
+Rpull sc_vcc sc_io {RPULL}
+Rreader_low sc_io 0 {RREADER_LOW}
+
+Vdrv drv_raw 0 {VDRV}
+R5 drv_raw gate 100
+R7 gate 0 100k
+M1 sc_io gate 0 0 M2N7002
+
+R6 sc_io u3_a2 220
+
+* U3 channel A2->B2 when DIR is tied high to SC_VCC.
+* This is a logic-level behavioral model, not a TI transistor model.
+Bsense stm32_sense 0 V = { V(u3_a2) > (SCVCC/2) ? VMCU : 0 }
+Rsense_load stm32_sense 0 1e9
+
+.model M2N7002 NMOS (
++ LEVEL=1
++ VTO=2.1
++ KP=0.12
++ LAMBDA=0.02
++ RD=2
++ RS=2
++)
+
+.control
+set noaskquit
+echo "case,SCVCC,RPULL,VDRV,RREADER_LOW,SC_IO,U3_A2,STM32_SENSE,I_SC_PULLUP_mA,I_DRV_uA"
+foreach scvcc 1.8 3.0 5.0
+  foreach rpull 1000 4700 10000
+    alterparam SCVCC = $scvcc
+    alterparam RPULL = $rpull
+
+    alterparam VDRV = 0
+    alterparam RREADER_LOW = 1e12
+    reset
+    op
+    let i_pullup_ma = -1000 * v(vsc#branch)
+    let i_drv_ua = -1000000 * v(vdrv#branch)
+    echo "released," $scvcc "," $rpull ",0,1e12," $&v(sc_io) "," $&v(u3_a2) "," $&v(stm32_sense) "," $&i_pullup_ma "," $&i_drv_ua
+
+    alterparam VDRV = 3.3
+    alterparam RREADER_LOW = 1e12
+    reset
+    op
+    let i_pullup_ma = -1000 * v(vsc#branch)
+    let i_drv_ua = -1000000 * v(vdrv#branch)
+    echo "stm32_drive_low," $scvcc "," $rpull ",3.3,1e12," $&v(sc_io) "," $&v(u3_a2) "," $&v(stm32_sense) "," $&i_pullup_ma "," $&i_drv_ua
+
+    alterparam VDRV = 0
+    alterparam RREADER_LOW = 10
+    reset
+    op
+    let i_pullup_ma = -1000 * v(vsc#branch)
+    let i_drv_ua = -1000000 * v(vdrv#branch)
+    echo "reader_drive_low," $scvcc "," $rpull ",0,10," $&v(sc_io) "," $&v(u3_a2) "," $&v(stm32_sense) "," $&i_pullup_ma "," $&i_drv_ua
+  end
+end
+quit
+.endc
+
+.end
