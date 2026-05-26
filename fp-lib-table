@@ -1,3 +1,4 @@
 (fp_lib_table
   (lib (name "SmartCard_ISO7816")(type "KiCad")(uri "${KIPRJMOD}/lib/SmartCard_ISO7816_Library/SmartCard_ISO7816.pretty")(options "")(descr "ISO 7816 smart card footprints"))
+  (lib (name "USB_C_HRO")(type "KiCad")(uri "${KIPRJMOD}/lib/USB_C_HRO.pretty")(options "")(descr "HRO USB Type-C connector footprints"))
 )
