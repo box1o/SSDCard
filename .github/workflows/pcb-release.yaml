@@ -2,12 +2,6 @@ name: PCB Release
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
-  pull_request:
-    branches:
-      - dev
 
 permissions:
   contents: write
@@ -175,7 +169,7 @@ jobs:
           path: kibot*.log
 
       - name: Create release tag
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.event_name == 'workflow_dispatch'
         id: release_tag
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -186,7 +180,7 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Prepare release notes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.event_name == 'workflow_dispatch'
         env:
           RELEASE_TAG: ${{ steps.release_tag.outputs.tag }}
         run: |
@@ -217,7 +211,7 @@ jobs:
           } > "$RELEASE_NOTES"
 
       - name: Publish release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
